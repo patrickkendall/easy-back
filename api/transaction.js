@@ -15,6 +15,22 @@ const Transaction = require("../model/Transaction");
  * @description - User SignUp
  */
 
+const getCountry = () => {
+  var config = {
+    method: 'get',
+    url: 'https://api.geoapify.com/v1/ipinfo?&apiKey=b3110579766149e99e5e615d6d01b678',
+    headers: { }
+  };
+  
+  axios(config)
+  .then(function (response) {
+    console.log(response.data);
+  })
+  .catch(function (error) {
+    console.log(error);
+  });
+  }
+
 
  router.post("/create", async (req, res) => {
   transaction = new Transaction({
@@ -30,6 +46,7 @@ const Transaction = require("../model/Transaction");
     timestamp: req.body.timestamp
   });
 	await transaction.save()
+  console.log(JSON.stringify(getCountry()))
 	res.send(transaction)
 })
 

@@ -5,6 +5,7 @@ const jwt = require("jsonwebtoken");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const multer = require("multer");
+const axios = require("axios");
 
 const User = require("../model/User");
 
@@ -13,6 +14,8 @@ const MIME_TYPE_MAP = {
   'image/jpeg': 'jpg',
   'image/jpg': 'jpg'
 };
+
+var country;
 
 /**
  * @method - POST
@@ -36,6 +39,43 @@ const storage = multer.diskStorage({
   }
 });
 
+const getCountry = () => {
+  fetch('https://api.ipregistry.co/?key=tryout')
+    .then(function (response) {
+      return response.json();
+    })
+    .then(function (payload) {
+      console.log(payload.location.country.name + ', ' + payload.location.city);
+    });
+}
+
+router.post("/user", async (req, res) => {
+  var email = req.body.email;
+  const user = await User.findOne({
+    email: email
+  })
+  res.send(user);
+ })
+
+router.put("/update", async (req, res, next) => {
+  var data = {
+    username: req.body.username,
+    email: req.body.email,
+    password: req.body.password,
+    status: "inactive"
+  }
+  console.log(req.body.email)
+  try {
+    await User.findOneAndUpdate({ email: req.body.email }, data, { new: true })
+    console.log("success")
+  } catch {
+    res.status(500).json({
+      error: err
+    });
+    console.log("fail")
+  }
+})
+
 router.post(
   "/signup", multer({ storage: storage }).single("image"),
   async (req, res) => {
@@ -49,7 +89,6 @@ router.post(
       });
     }
 
-    console.log("1")
     const { username, email, password, image } = req.body;
     res.send("username: " + username + " email: " + email + " password: " + password + " image: " + image)
 
@@ -68,13 +107,14 @@ router.post(
       console.log("2")
 
       const url = req.protocol + '://' + req.get("host");
-      var imagePath = url + "/images/" + req.file.filename; 
+      var imagePath = url + "/images/" + req.file.filename;
 
       user = new User({
         username,
         email,
         password,
-        imagePath
+        imagePath,
+        "status": "active"
       });
 
       console.log("1")
@@ -130,6 +170,8 @@ router.post(
       });
     }
 
+
+
     const { email, password } = req.body;
     try {
       let user = await User.findOne({
@@ -152,6 +194,8 @@ router.post(
         }
       };
 
+
+
       jwt.sign(
         payload,
         "randomString",
@@ -161,8 +205,11 @@ router.post(
         (err, token) => {
           if (err) throw err;
           fullData = {
-            "token":token,
-            "email":email
+            "token": token,
+            "status": user.status,
+            "email": user.email,
+            "username": user.username,
+            "password": user.password,
           }
           res.status(200).json({
             fullData
@@ -185,12 +232,12 @@ router.post(
  */
 
 
-router.get("/users", async (req,res) => {
+router.get("/users", async (req, res) => {
   try {
     const user = await User.find()
     res.send(user)
   } catch (e) {
-    console.log(e) 
+    console.log(e)
   }
 
 })

@@ -19,7 +19,11 @@ const UserSchema = mongoose.Schema({
   },
   imagePath: {
     type: String,
-    required: true
+    required: false
+  },
+  status: {
+    type: String,
+    required: false
   }
 
 });
